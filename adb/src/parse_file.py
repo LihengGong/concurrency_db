@@ -1,8 +1,7 @@
 import re
-import transaction
-from transactionmanager import TransactionManager
+import transactionmanager
 
-trans_manager = TransactionManager()
+trans_manager = transactionmanager.TransactionManager()
 
 
 def read_parse_file(filename):
@@ -53,6 +52,7 @@ def parse_line(line):
             print('Wrong file format')
         # transaction.write_operation()
     elif line.startswith('R('):
+        print('read line:', line)
         trans_num = find_transaction_number(line)
         v_ind = find_variable_ind(line)
         print('read trans num', trans_num)
@@ -89,8 +89,3 @@ def parse_line(line):
             print('dump all')
             trans_manager.dump_all()
         # transaction.dump_info()
-
-
-if __name__ == '__main__':
-    trans_manager = TransactionManager()
-    read_parse_file('input1.txt')
