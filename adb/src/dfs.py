@@ -22,18 +22,18 @@ class Graph:
     def insert_vertex(self, v_id):
         self.vertices.append(Vertices(v_id))
 
-    def retrieve_adjacent(self, v_id):
+    def retrieve_vertex(self, v_id):
         for v in self.vertices:
             if v.v_id == v_id:
                 return v
 
     def update_adjacent(self, v_id, a_id):
-        vertex = self.retrieve_adjacent(v_id)
-        adjacent = self.retrieve_adjacent(a_id)
+        vertex = self.retrieve_vertex(v_id)
+        adjacent = self.retrieve_vertex(a_id)
         if adjacent not in vertex.adjacent:
             vertex.insert_v(adjacent)
 
-    def delete_adjacent(self, a_id):
+    def delete_vertex(self, a_id):
         k = 0
         for v in self.vertices:
             k += 1
