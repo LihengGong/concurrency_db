@@ -92,4 +92,5 @@ def parse_line(line):
 
 
 if __name__ == '__main__':
+    trans_manager = TransactionManager()
     read_parse_file('input1.txt')
