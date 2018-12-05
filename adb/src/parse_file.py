@@ -1,5 +1,8 @@
 import re
 import transaction
+from transactionmanager import TransactionManager
+
+trans_manager = TransactionManager()
 
 
 def read_parse_file(filename):
@@ -32,40 +35,60 @@ def parse_line(line):
     if line.startswith('begin('):
         trans_num = find_transaction_number(line)
         print('begin trans num', trans_num)
-        transaction.start_cur_trans('typeRW', 0)
+        # transaction.start_cur_trans('typeRW', 0)
+        trans_manager.start_transaction('RW', trans_num)
     elif line.startswith('beginRO('):
-        transaction.start_cur_trans('typeRO', 0)
+        trans_num = find_transaction_number(line)
+        # transaction.start_cur_trans('typeRO', 0)
+        trans_manager.start_transaction('RO', trans_num)
     elif line.startswith('W('):
+        trans_num = find_transaction_number(line)
         v_ind = find_variable_ind(line)
         v_val = find_write_variable_val(line[2:-1])
         print('write variable ind', v_ind, 'variable val', v_val)
-        transaction.write_operation()
+        if trans_num in trans_manager.transaction_map:
+            trans_manager.insert_site_to_trans_map(trans_num, v_ind)
+            trans_manager.write_op(trans_num, v_ind, v_val)
+        else:
+            print('Wrong file format')
+        # transaction.write_operation()
     elif line.startswith('R('):
         trans_num = find_transaction_number(line)
+        v_ind = find_variable_ind(line)
         print('read trans num', trans_num)
-        transaction.read_operation()
+        if trans_num in trans_manager.transaction_map:
+            trans_manager.insert_site_to_trans_map(trans_num, v_ind)
+            trans_manager.read_op(trans_num, v_ind)
+        # transaction.read_operation()
     elif line.startswith('end('):
         trans_num = find_transaction_number(line)
         print('end trans num', trans_num)
-        transaction.end_transaction()
+        if trans_num in trans_manager.transaction_map:
+            trans_manager.end_transaction(trans_num)
+        # transaction.end_transaction()
     elif line.startswith('recover('):
         site_number = find_pure_number(line)
         print('recover', site_number)
-        transaction.recover_site()
+        trans_manager.recover_site(site_number)
+        # transaction.recover_site()
     elif line.startswith('fail('):
         site_number = find_pure_number(line)
         print('fail', site_number)
-        transaction.fail_site()
+        trans_manager.fail_site(site_number)
+        # transaction.fail_site()
     elif line.startswith('dump('):
         if 'x' in line:
             v_ind = find_variable_ind(line)
             print('dump x', v_ind)
+            trans_manager.dump_single_val(v_ind)
         elif re.match(r'\d+', line):
             v_val = find_pure_number(line)
             print('dump v', v_val)
+            trans_manager.dump_single_site(v_val)
         else:
             print('dump all')
-        transaction.dump_info()
+            trans_manager.dump_all()
+        # transaction.dump_info()
 
 
 if __name__ == '__main__':
