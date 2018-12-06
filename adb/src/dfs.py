@@ -3,8 +3,11 @@ class Vertices:
         self.v_id = v_id
         self.adjacent = list()
 
-    def insert_v(self, vtc):
-        self.adjacent.append(vtc)
+    def __repr__(self):
+        return 'v_id: {}, adjacent list: {}'.format(self.v_id, self.adjacent)
+
+    def insert_v(self, vtx):
+        self.adjacent.append(vtx)
 
     def delete_v(self, v_id):
         k = 0
@@ -46,6 +49,14 @@ class Graph:
         for v in self.vertices:
             v.delete_v(k)
 
+    def find_index(self, vertices, vtx):
+        k = 0
+        print('find-index: vertices:', vertices, 'vtx:', vtx)
+        for v in vertices:
+            if vtx.v_id == v.v_id:
+                return k
+            k += 1
+
     def build_dag(self):
         is_visited = [0 for i in range(len(self.vertices))]
         v_of_cycle = set()
@@ -69,6 +80,7 @@ class Graph:
         is_visited[v_id] = 1
         has_cycle = False
 
+        print('dfs: adjacent: ', self.vertices[v_id].adjacent)
         for v in self.vertices[v_id].adjacent:
             ind = self.vertices.index(v)
             has_cycle = self.dfs(ind, is_visited, res_set)

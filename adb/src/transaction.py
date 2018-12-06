@@ -7,6 +7,11 @@ class Operation:
         if v_val:
             self.v_val = v_val
 
+    def __repr__(self):
+        return 'op-type:{}, v_id:{}, time:{}, t_id:{}, v_val:{}'.format(
+            self.op_type, self.v_ind, self.time, self.trans_id, self.v_val
+        )
+
 
 class Transaction:
     def __init__(self, t_id, time, tp):

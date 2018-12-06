@@ -143,6 +143,7 @@ class TransactionManager:
         print('run wait list, wait list:', self.op_wait_list)
         for i in range(len(self.op_wait_list) - 1, -1, -1):
             t_id = self.op_wait_list[i].trans_id
+            print('run-wait-list, t_id=', t_id)
             trans = self.transaction_map[t_id]
             op = self.op_wait_list[i]
             del self.op_wait_list[i]
@@ -173,30 +174,30 @@ class TransactionManager:
         if trans.trans_type == 'RO':
             if v_id % 2 == 1:
                 site = self.sites_map[v_id % 10 + 1]
-                op1 = Operation('read', v_id, datetime.now(), t_id)
+                op1 = Operation('read', v_id, datetime.now(), t_id, None)
                 site.add_operation(t_id, op1)
-                op2 = Operation('read', v_id, datetime.now(), t_id)
+                op2 = Operation('read', v_id, datetime.now(), t_id, None)
                 self.transaction_map[t_id].insert_op(op2)
                 site.commit(op1, trans)
             else:
                 for st in self.variable_site_map[v_id]:
                     site = self.sites_map[st]
-                    op1 = Operation('read', v_id, datetime.now(), t_id)
+                    op1 = Operation('read', v_id, datetime.now(), t_id, None)
                     site.add_operation(t_id, op1)
                     if site.commit(op1, trans):
                         break
-                op2 = Operation('read', v_id, datetime.now(), t_id)
+                op2 = Operation('read', v_id, datetime.now(), t_id, None)
                 self.transaction_map[t_id].insert_op(op2)
         else:
             if v_id % 2 == 1:
                 site = self.sites_map[v_id % 10 + 1]
 
-                op1 = Operation('read', v_id, datetime.now(), t_id)
+                op1 = Operation('read', v_id, datetime.now(), t_id, None)
                 cur_res = site.insert_lock(v_id, Lock(v_id, t_id, 'read'))
                 print('read op, odd, sites map', site, ' res of insert-lock:', cur_res)
                 if cur_res:
                     site.add_operation(t_id, op1)
-                    op2 = Operation('read', v_id, datetime.now(), t_id)
+                    op2 = Operation('read', v_id, datetime.now(), t_id, None)
                     self.transaction_map[t_id].insert_op(op2)
                     site.commit(op1, trans)
                 else:
@@ -211,10 +212,10 @@ class TransactionManager:
                 sites = self.variable_site_map[v_id]
                 print('read op, even, sites map', sites)
                 res = False
-                op1 = Operation('read', v_id, datetime.now(), t_id)
+                op1 = Operation('read', v_id, datetime.now(), t_id, None)
                 for st in sites:
                     site = self.sites_map[st]
-                    op2 = Operation('read', v_id, datetime.now(), t_id)
+                    op2 = Operation('read', v_id, datetime.now(), t_id, None)
                     if site.insert_lock(v_id, Lock(v_id, t_id, 'read')):
                         site.add_operation(t_id, op2)
                         res = True
@@ -235,7 +236,7 @@ class TransactionManager:
                             self.graph.update_adjacent(lk.trans_id, t_id)
                     self.check_deadlock()
                 else:
-                    op2 = Operation('read', v_id, datetime.now(), t_id)
+                    op2 = Operation('read', v_id, datetime.now(), t_id, None)
                     self.transaction_map[t_id].insert_op(op2)
         return res
 
@@ -243,11 +244,11 @@ class TransactionManager:
         print('in write op, tid', t_id, 'vid', v_id)
         res = True
         if v_id % 2 == 1:
-            op1 = Operation('write', v_id, v_val, datetime.now(), t_id)
+            op1 = Operation('write', v_id, datetime.now(), t_id, v_val)
             site = self.sites_map[v_id % 10 + 1]
             if site.insert_lock(v_id, Lock(v_id, t_id, 'write')):
                 site.add_operation(t_id, op1)
-                op2 = Operation('write', v_id, v_val, datetime.now(), t_id)
+                op2 = Operation('write', v_id, datetime.now(), t_id, v_val)
                 self.transaction_map[t_id].insert_op(op2)
             else:
                 self.op_wait_list.append(op1)
@@ -260,10 +261,10 @@ class TransactionManager:
         else:
             sites = self.variable_site_map[v_id]
             is_add_op = False
-            op1 = Operation('write', v_id, v_val, datetime.now(), t_id)
+            op1 = Operation('write', v_id, datetime.now(), t_id, v_val)
             for st in sites:
                 site = self.sites_map[st]
-                op2 = Operation('write', v_id, v_val, datetime.now(), t_id)
+                op2 = Operation('write', v_id, datetime.now(), t_id, v_val)
                 if site.status == 'normal':
                     if not site.insert_lock(v_id, Lock(v_id, t_id, 'write')):
                         break
@@ -272,11 +273,11 @@ class TransactionManager:
                         is_add_op = True
             if is_add_op:
                 for st in sites:
-                    op2 = Operation('write', v_id, v_val, datetime.now(), t_id)
+                    op2 = Operation('write', v_id, datetime.now(), t_id, v_val)
                     site = self.sites_map[st]
                     if site.status == 'recovery':
                         site.add_operation(t_id, op2)
-                op3 = Operation('write', v_id, v_val, datetime.now(), t_id)
+                op3 = Operation('write', v_id, datetime.now(), t_id, v_val)
                 self.transaction_map[t_id].insert_op(op3)
             else:
                 self.op_wait_list.append(op1)
