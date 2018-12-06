@@ -8,6 +8,34 @@ def read_parse_file(filename):
         for line in file:
             parse_line(line.strip(), trans_manager)
 
+def get_total_line_numbr(filename):
+    ln_num = -1
+    with open(filename) as file:
+        for ln_num, line in enumerate(file):
+            pass
+    return ln_num + 1
+
+def read_parse_partial_file(filename, total_lines):
+    next_start = 0
+    batch_num = 0
+    while next_start < total_lines:
+        next_start = read_parse_file_from_line(filename, next_start)
+        batch_num += 1
+        print('end of batch', batch_num)
+        next_start += 1
+    pass
+
+def read_parse_file_from_line(filename, start_line_number):
+    trans_manager = transactionmanager.TransactionManager()
+    start = start_line_number
+    with open(filename) as file:
+        for ln_num, line in enumerate(file):
+            if ln_num >= start_line_number:
+                if '======' in line:
+                    return start
+                start += 1
+                parse_line(line.strip(), trans_manager)
+    return start
 
 def find_transaction_number(line):
     lst_res = re.findall(r'T\d+', line)
