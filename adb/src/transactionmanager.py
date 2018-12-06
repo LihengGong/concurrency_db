@@ -559,10 +559,3 @@ class Lock:
         self.val_ind = v_ind
         self.trans_id = t_id
         self.lock_type = l_type
-
-
-
-
-
-
-
