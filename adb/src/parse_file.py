@@ -1,13 +1,12 @@
 import re
 import transactionmanager
 
-trans_manager = transactionmanager.TransactionManager()
-
 
 def read_parse_file(filename):
+    trans_manager = transactionmanager.TransactionManager()
     with open(filename) as file:
         for line in file:
-            parse_line(line.strip())
+            parse_line(line.strip(), trans_manager)
 
 
 def find_transaction_number(line):
@@ -30,7 +29,7 @@ def find_pure_number(line):
     return int(lst_res[0]) if len(lst_res) > 0 else None
 
 
-def parse_line(line):
+def parse_line(line, trans_manager):
     if line.startswith('begin('):
         trans_num = find_transaction_number(line)
         print('begin trans num', trans_num)
