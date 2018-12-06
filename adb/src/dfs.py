@@ -9,10 +9,11 @@ class Vertices:
     def delete_v(self, v_id):
         k = 0
         for v in self.adjacent:
-            k += 1
             if v_id == v.v_id:
                 break
-        self.adjacent.remove(k)
+            k += 1
+        if len(self.adjacent) > 0 and k < len(self.adjacent):
+            self.adjacent.pop(k)
 
 
 class Graph:
@@ -36,18 +37,20 @@ class Graph:
     def delete_vertex(self, a_id):
         k = 0
         for v in self.vertices:
-            k += 1
             if v.v_id == a_id:
                 break
-        self.vertices.remove(k)
+            k += 1
+        print('delete vertex: k=', k)
+        print('delete vertex: vertices:', self.vertices)
+        self.vertices.pop(k)
         for v in self.vertices:
             v.delete_v(k)
 
     def build_dag(self):
-        is_visited = [False for i in range(len(self.vertices))]
+        is_visited = [0 for i in range(len(self.vertices))]
         v_of_cycle = set()
         for i in range(len(is_visited)):
-            if is_visited[i] is False:
+            if is_visited[i] == 0:
                 self.dfs(i, is_visited, v_of_cycle)
 
         # if len(v_of_cycle) == 0:
@@ -58,24 +61,25 @@ class Graph:
             res_path.append(self.vertices[v].v_id)
         return res_path
 
-    def dfs(self, v_id, is_visited, res):
-        if is_visited[v_id]:
-            res.add(v_id)
+    def dfs(self, v_id, is_visited, res_set):
+        if is_visited[v_id] == 1:
+            res_set.add(v_id)
             return True
 
-        is_visited[v_id] = True
+        is_visited[v_id] = 1
         has_cycle = False
 
         for v in self.vertices[v_id].adjacent:
             ind = self.vertices.index(v)
-            has_cycle = self.dfs(ind, is_visited, res)
+            has_cycle = self.dfs(ind, is_visited, res_set)
             if has_cycle:
-                if v_id in res:
+                if v_id in res_set:
                     return False
                 else:
-                    res.add(v_id)
+                    res_set.add(v_id)
                     return True
 
+        is_visited[v_id] = 2
         return has_cycle
 
 
@@ -87,10 +91,10 @@ if __name__ == '__main__':
     graph.insert_vertex(3)
     graph.insert_vertex(4)
     graph.insert_vertex(5)
-    graph.update_adjacent(1, 2)
-    graph.update_adjacent(2, 3)
-    graph.update_adjacent(3, 4)
-    graph.update_adjacent(4, 5)
-    graph.update_adjacent(5, 1)
+    graph.update_adjacent(2, 1)
+    graph.update_adjacent(3, 2)
+    graph.update_adjacent(4, 3)
+    graph.update_adjacent(5, 4)
+    graph.update_adjacent(1, 5)
     res = graph.build_dag()
     print(res)

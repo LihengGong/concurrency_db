@@ -1,7 +1,7 @@
 from datetime import datetime
+from collections import deque
 from dfs import Graph
 from transaction import Transaction, Operation
-from collections import deque
 
 
 class TransactionManager:
@@ -130,16 +130,17 @@ class TransactionManager:
 
     """
     lst = [k for k in range(20)]
-    
+
     print(lst)
-    
+
     for i in range(len(lst) - 1, -1, -1):
         if lst[i] % 3 == 0:
             del lst[i]
-    
+
     print(lst)
     """
     def run_wait_list(self):
+        print('run wait list, wait list:', self.op_wait_list)
         for i in range(len(self.op_wait_list) - 1, -1, -1):
             t_id = self.op_wait_list[i].trans_id
             trans = self.transaction_map[t_id]
@@ -162,12 +163,13 @@ class TransactionManager:
                         print('Waiting op commit done')
 
     def read_op(self, t_id, v_id):
+        print('in read op, tid', t_id, 'vid', v_id)
         if t_id not in self.transaction_map:
             print('Aborted Transaction in read_op')
             return True
         trans = self.transaction_map[t_id]
         res = True
-        print('read op, type = ', trans.trans_type, 'tid', t_id, 'vid', v_id)
+
         if trans.trans_type == 'RO':
             if v_id % 2 == 1:
                 site = self.sites_map[v_id % 10 + 1]
@@ -188,9 +190,11 @@ class TransactionManager:
         else:
             if v_id % 2 == 1:
                 site = self.sites_map[v_id % 10 + 1]
-                print('read op, odd, sites map', site)
+
                 op1 = Operation('read', v_id, datetime.now(), t_id)
-                if site.insert_lock(v_id, Lock(v_id, t_id, 'read')):
+                cur_res = site.insert_lock(v_id, Lock(v_id, t_id, 'read'))
+                print('read op, odd, sites map', site, ' res of insert-lock:', cur_res)
+                if cur_res:
                     site.add_operation(t_id, op1)
                     op2 = Operation('read', v_id, datetime.now(), t_id)
                     self.transaction_map[t_id].insert_op(op2)
@@ -200,11 +204,12 @@ class TransactionManager:
                     res = False
                     for lk in site.lock_table[v_id]:
                         if lk.lock_type == 'write' and lk.trans_id != t_id:
+                            print('1 graph add edge:', lk.trans_id, '---', t_id)
                             self.graph.update_adjacent(lk.trans_id, t_id)
                     self.check_deadlock()
             else:
                 sites = self.variable_site_map[v_id]
-                print('read op, odd, sites map', sites)
+                print('read op, even, sites map', sites)
                 res = False
                 op1 = Operation('read', v_id, datetime.now(), t_id)
                 for st in sites:
@@ -226,6 +231,7 @@ class TransactionManager:
 
                     for lk in site.lock_table[v_id]:
                         if lk.lock_type == 'write' and lk.trans_id != t_id:
+                            print('2 graph add edge:', lk.trans_id, '---', t_id)
                             self.graph.update_adjacent(lk.trans_id, t_id)
                     self.check_deadlock()
                 else:
@@ -234,6 +240,7 @@ class TransactionManager:
         return res
 
     def write_op(self, t_id, v_id, v_val):
+        print('in write op, tid', t_id, 'vid', v_id)
         res = True
         if v_id % 2 == 1:
             op1 = Operation('write', v_id, v_val, datetime.now(), t_id)
@@ -247,6 +254,7 @@ class TransactionManager:
                 res = False
                 for lk in site.lock_table[v_id]:
                     if lk.trans_id != t_id:
+                        print('3 graph add edge:', lk.trans_id, '---', t_id)
                         self.graph.update_adjacent(lk.trans_id, t_id)
                 self.check_deadlock()
         else:
@@ -281,6 +289,7 @@ class TransactionManager:
 
                 for lk in site.lock_table[v_id]:
                     if lk.trans_id != t_id:
+                        print('4 graph add edge:', lk.trans_id, '---', t_id)
                         self.graph.update_adjacent(lk.trans_id, t_id)
                 self.check_deadlock()
                 pass
@@ -288,6 +297,8 @@ class TransactionManager:
 
     def check_deadlock(self):
         deadlock_trans = self.graph.build_dag()
+        print('detect dag: deadlock_trans', deadlock_trans)
+
         while len(deadlock_trans) > 0:
             res_trans = self.transaction_map[deadlock_trans[0]]
             for i in range(1, len(deadlock_trans)):
@@ -342,6 +353,9 @@ class Sites:
                 self.variables[i] = Variable(i, 10 * i)
                 self.lock_table[i] = list()
 
+    def __repr__(self):
+        return 'site id = {}, status = {}'.format(self.site_id, self.status)
+
     def update_variable_lock(self, ind, lock):
         pass
         # self.lock_table[ind].append(lock)
@@ -358,6 +372,7 @@ class Sites:
             if len(variable_locks) == 0:
                 variable_locks.append(lock)
                 self.lock_table[v_ind] = variable_locks
+                return True
             else:
                 res = False
                 for v_l in variable_locks:
@@ -369,6 +384,7 @@ class Sites:
                     self.lock_table[v_ind] = variable_locks
                 return not res
         else:
+            print('insert lock, len of variable-locks:', len(variable_locks))
             if len(variable_locks) > 1:
                 return False
             elif len(variable_locks) == 1:
