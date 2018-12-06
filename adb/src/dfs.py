@@ -34,8 +34,8 @@ class Graph:
                 return v
 
     def update_adjacent(self, v_id, a_id):
-        if (v_id == a_id):
-            print('update_adjacent vid==aid=', v_id, a_id)
+        # if (v_id == a_id):
+        #     print('update_adjacent vid==aid=', v_id, a_id)
         vertex = self.retrieve_vertex(v_id)
         adj_v = self.retrieve_vertex(a_id)
         if adj_v not in vertex.adjacent:
@@ -47,17 +47,17 @@ class Graph:
             if v.v_id == a_id:
                 break
             k += 1
-        print('before delete vertex: k=', k)
-        print('before delete vertex: vertices:', self.vertices)
+        # print('before delete vertex: k=', k)
+        # print('before delete vertex: vertices:', self.vertices)
         self.vertices.pop(k)
         for v in self.vertices:
             v.delete_v(a_id)
-        print('after delete vertex: k=', k)
-        print('after delete vertex: vertices:', self.vertices)
+        # print('after delete vertex: k=', k)
+        # print('after delete vertex: vertices:', self.vertices)
 
     def find_index(self, vertices, vtx):
         k = 0
-        print('find-index: vertices:', vertices, 'vtx:', vtx)
+        # print('find-index: vertices:', vertices, 'vtx:', vtx)
         for v in vertices:
             if vtx == v.v_id:
                 return k
@@ -86,12 +86,12 @@ class Graph:
         is_visited[v_id] = 1
         has_cycle = False
 
-        print('dfs: adjacent: ', self.vertices[v_id].adjacent)
-        print('dfs: vertices:', self.vertices)
+        # print('dfs: adjacent: ', self.vertices[v_id].adjacent)
+        # print('dfs: vertices:', self.vertices)
         for v in self.vertices[v_id].adjacent:
             # ind = self.vertices.index(v)
             ind = self.find_index(self.vertices, v)
-            print('dfs: ind=', ind)
+            # print('dfs: ind=', ind)
             has_cycle = self.dfs(ind, is_visited, res_set)
             if has_cycle:
                 if v_id in res_set:
@@ -104,6 +104,7 @@ class Graph:
         return has_cycle
 
 
+# code for testing
 if __name__ == '__main__':
     """ test """
     graph = Graph()
