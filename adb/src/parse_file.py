@@ -15,13 +15,23 @@ def get_total_line_numbr(filename):
             pass
     return ln_num + 1
 
+def print_header():
+    stars = '*' * 50
+    print(stars)
+
 def read_parse_partial_file(filename, total_lines):
     next_start = 0
     batch_num = 0
     while next_start < total_lines:
-        next_start = read_parse_file_from_line(filename, next_start)
         batch_num += 1
+        print_header()
+        print('begin batch', batch_num)
+        print_header()
+        next_start = read_parse_file_from_line(filename, next_start)
+        print_header()
         print('end of batch', batch_num)
+        print_header()
+        print()
         next_start += 1
     pass
 
@@ -61,11 +71,9 @@ def parse_line(line, trans_manager):
     if line.startswith('begin('):
         trans_num = find_transaction_number(line)
         print('begin trans num', trans_num)
-        # transaction.start_cur_trans('typeRW', 0)
         trans_manager.start_transaction('RW', trans_num)
     elif line.startswith('beginRO('):
         trans_num = find_transaction_number(line)
-        # transaction.start_cur_trans('typeRO', 0)
         trans_manager.start_transaction('RO', trans_num)
     elif line.startswith('W('):
         trans_num = find_transaction_number(line)
@@ -77,7 +85,6 @@ def parse_line(line, trans_manager):
             trans_manager.write_op(trans_num, v_ind, v_val)
         else:
             print('Wrong file format')
-        # transaction.write_operation()
     elif line.startswith('R('):
         print('read line:', line)
         trans_num = find_transaction_number(line)
@@ -86,23 +93,19 @@ def parse_line(line, trans_manager):
         if trans_num in trans_manager.transaction_map:
             trans_manager.insert_site_to_trans_map(trans_num, v_ind)
             trans_manager.read_op(trans_num, v_ind)
-        # transaction.read_operation()
     elif line.startswith('end('):
         trans_num = find_transaction_number(line)
         print('end trans num', trans_num)
         if trans_num in trans_manager.transaction_map:
             trans_manager.end_transaction(trans_num)
-        # transaction.end_transaction()
     elif line.startswith('recover('):
         site_number = find_pure_number(line)
         print('recover', site_number)
         trans_manager.recover_site(site_number)
-        # transaction.recover_site()
     elif line.startswith('fail('):
         site_number = find_pure_number(line)
         print('fail', site_number)
         trans_manager.fail_site(site_number)
-        # transaction.fail_site()
     elif line.startswith('dump('):
         if 'x' in line:
             v_ind = find_variable_ind(line)
@@ -115,4 +118,3 @@ def parse_line(line, trans_manager):
         else:
             print('dump all')
             trans_manager.dump_all()
-        # transaction.dump_info()
