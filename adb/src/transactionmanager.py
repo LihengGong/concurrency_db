@@ -101,8 +101,8 @@ class TransactionManager:
                     self.run_wait_list()
 
     def run_operation(self, op):
-        v_id = op.v_id
-        trans = self.transaction_map[op.t_id]
+        v_id = op.v_ind
+        trans = self.transaction_map[op.trans_id]
 
         if v_id % 2 == 1:
             site = self.sites_map[v_id % 10 + 1]
@@ -141,6 +141,7 @@ class TransactionManager:
     """
     def run_wait_list(self):
         print('run wait list, wait list:', self.op_wait_list)
+        self.op_wait_list.reverse()
         for i in range(len(self.op_wait_list) - 1, -1, -1):
             t_id = self.op_wait_list[i].trans_id
             print('run-wait-list, t_id=', t_id)
@@ -162,6 +163,7 @@ class TransactionManager:
                         print('Waiting op to commit')
                         self.end_transaction(op.trans_id)
                         print('Waiting op commit done')
+        self.op_wait_list.reverse()
 
     def read_op(self, t_id, v_id):
         print('in read op, tid', t_id, 'vid', v_id)
@@ -205,7 +207,7 @@ class TransactionManager:
                     res = False
                     for lk in site.lock_table[v_id]:
                         if lk.lock_type == 'write' and lk.trans_id != t_id:
-                            print('1 graph add edge:', lk.trans_id, '---', t_id)
+                            print('I graph add edge:', lk.trans_id, '---', t_id)
                             self.graph.update_adjacent(lk.trans_id, t_id)
                     self.check_deadlock()
             else:
@@ -232,7 +234,7 @@ class TransactionManager:
 
                     for lk in site.lock_table[v_id]:
                         if lk.lock_type == 'write' and lk.trans_id != t_id:
-                            print('2 graph add edge:', lk.trans_id, '---', t_id)
+                            print('II graph add edge:', lk.trans_id, '---', t_id)
                             self.graph.update_adjacent(lk.trans_id, t_id)
                     self.check_deadlock()
                 else:
@@ -241,7 +243,7 @@ class TransactionManager:
         return res
 
     def write_op(self, t_id, v_id, v_val):
-        print('in write op, tid', t_id, 'vid', v_id)
+        print('in write op, tid', t_id, 'vid', v_id, 'newval=', v_val)
         res = True
         if v_id % 2 == 1:
             op1 = Operation('write', v_id, datetime.now(), t_id, v_val)
@@ -255,7 +257,7 @@ class TransactionManager:
                 res = False
                 for lk in site.lock_table[v_id]:
                     if lk.trans_id != t_id:
-                        print('3 graph add edge:', lk.trans_id, '---', t_id)
+                        print('III graph add edge:', lk.trans_id, '---', t_id)
                         self.graph.update_adjacent(lk.trans_id, t_id)
                 self.check_deadlock()
         else:
@@ -290,7 +292,7 @@ class TransactionManager:
 
                 for lk in site.lock_table[v_id]:
                     if lk.trans_id != t_id:
-                        print('4 graph add edge:', lk.trans_id, '---', t_id)
+                        print('IV graph add edge:', lk.trans_id, '---', t_id)
                         self.graph.update_adjacent(lk.trans_id, t_id)
                 self.check_deadlock()
                 pass
@@ -333,9 +335,12 @@ class TransactionManager:
 
     def dump_single_val(self, v_id):
         sites = self.variable_site_map[v_id]
+        # sites = self.sites_map[v_id]
         for st in sites:
             print('Site ', st)
-            st.dump_single(v_id)
+            site = self.sites_map[st]
+            site.dump_single(v_id)
+            # st.dump_single(v_id)
 
     def dump_single_site(self, s_id):
         print('Dump site', s_id)
@@ -535,12 +540,12 @@ class Variable:
         self.start_time = datetime.now()
         self.committed_delta_time = datetime.now() - self.start_time
         self.data_version = dict()
-        self.data_version[self.committed_delta_time.total_seconds()] = self.value
+        self.data_version[self.committed_delta_time] = self.value
 
     def set_value(self, v_val):
         self.committed_delta_time = datetime.now() - self.start_time
         # delta_time = datetime.datetime.now() - self.start_time
-        self.data_version[self.committed_delta_time.total_seconds()] = v_val
+        self.data_version[self.committed_delta_time] = v_val
         self.value = v_val
 
     def retrieve_newest(self, time):

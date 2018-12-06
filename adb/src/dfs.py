@@ -1,22 +1,24 @@
 class Vertices:
     def __init__(self, v_id):
         self.v_id = v_id
-        self.adjacent = list()
+        self.adjacent = set()
 
     def __repr__(self):
         return 'v_id: {}, adjacent list: {}'.format(self.v_id, self.adjacent)
 
     def insert_v(self, vtx):
-        self.adjacent.append(vtx)
+        self.adjacent.add(vtx.v_id)
 
     def delete_v(self, v_id):
-        k = 0
-        for v in self.adjacent:
-            if v_id == v.v_id:
-                break
-            k += 1
-        if len(self.adjacent) > 0 and k < len(self.adjacent):
-            self.adjacent.pop(k)
+        if v_id in self.adjacent:
+            self.adjacent.remove(v_id)
+        # k = 0
+        # for v in self.adjacent:
+        #     if v_id == v:
+        #         break
+        #     k += 1
+        # if len(self.adjacent) > 0 and k < len(self.adjacent):
+        #     self.adjacent.pop(k)
 
 
 class Graph:
@@ -32,10 +34,12 @@ class Graph:
                 return v
 
     def update_adjacent(self, v_id, a_id):
+        if (v_id == a_id):
+            print('update_adjacent vid==aid=', v_id, a_id)
         vertex = self.retrieve_vertex(v_id)
-        adjacent = self.retrieve_vertex(a_id)
-        if adjacent not in vertex.adjacent:
-            vertex.insert_v(adjacent)
+        adj_v = self.retrieve_vertex(a_id)
+        if adj_v not in vertex.adjacent:
+            vertex.insert_v(adj_v)
 
     def delete_vertex(self, a_id):
         k = 0
@@ -43,17 +47,19 @@ class Graph:
             if v.v_id == a_id:
                 break
             k += 1
-        print('delete vertex: k=', k)
-        print('delete vertex: vertices:', self.vertices)
+        print('before delete vertex: k=', k)
+        print('before delete vertex: vertices:', self.vertices)
         self.vertices.pop(k)
         for v in self.vertices:
-            v.delete_v(k)
+            v.delete_v(a_id)
+        print('after delete vertex: k=', k)
+        print('after delete vertex: vertices:', self.vertices)
 
     def find_index(self, vertices, vtx):
         k = 0
         print('find-index: vertices:', vertices, 'vtx:', vtx)
         for v in vertices:
-            if vtx.v_id == v.v_id:
+            if vtx == v.v_id:
                 return k
             k += 1
 
@@ -64,13 +70,13 @@ class Graph:
             if is_visited[i] == 0:
                 self.dfs(i, is_visited, v_of_cycle)
 
-        # if len(v_of_cycle) == 0:
-        #     return list()
-        # else:
-        res_path = list()
-        for v in v_of_cycle:
-            res_path.append(self.vertices[v].v_id)
-        return res_path
+        if len(v_of_cycle) == 0:
+            return list()
+        else:
+            res_path = list()
+            for v in v_of_cycle:
+                res_path.append(self.vertices[v].v_id)
+            return res_path
 
     def dfs(self, v_id, is_visited, res_set):
         if is_visited[v_id] == 1:
@@ -81,8 +87,11 @@ class Graph:
         has_cycle = False
 
         print('dfs: adjacent: ', self.vertices[v_id].adjacent)
+        print('dfs: vertices:', self.vertices)
         for v in self.vertices[v_id].adjacent:
-            ind = self.vertices.index(v)
+            # ind = self.vertices.index(v)
+            ind = self.find_index(self.vertices, v)
+            print('dfs: ind=', ind)
             has_cycle = self.dfs(ind, is_visited, res_set)
             if has_cycle:
                 if v_id in res_set:
