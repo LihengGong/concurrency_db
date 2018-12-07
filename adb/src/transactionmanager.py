@@ -335,11 +335,14 @@ class TransactionManager:
         trans_lst = site.fail()
         print('in fail site, trans lst =', trans_lst)
         if len(trans_lst) > 0:
-            print('Site fails. Abort all transactions...')
+            print('Site', s_id, 'fails. Abort all transactions...')
+            print()
             for t_id in trans_lst:
                 print('aborting transaction T', t_id)
                 self.abort(self.transaction_map[t_id])
+                print()
         print('site', s_id, ' failed')
+        print()
 
     def recover_site(self, s_id):
         print('Recover site', s_id)
