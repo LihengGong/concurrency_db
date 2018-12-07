@@ -101,7 +101,7 @@ class TransactionManager:
                 res = self.transaction_map[t_id].trans_type == 'RW'
                 if res:
                     self.graph.delete_vertex(t_id)
-                print('Transaction ', t_id, ' committed, ')
+                print('Transaction ', t_id, ' committed, ', end='')
                 if target == -1:
                     print('normal commit')
                 else:
