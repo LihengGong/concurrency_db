@@ -9,6 +9,7 @@ from collections import deque
 from dfs import Graph
 from transaction import Transaction, Operation
 
+DEBUG_FLAG = False
 
 class TransactionManager:
     def __init__(self):
@@ -65,7 +66,8 @@ class TransactionManager:
                 # print('before clear, operations=', transaction.operations)
                 transaction.clear_op()
 
-                print('in end trans111, before for loop, operations=', ops)
+                if DEBUG_FLAG:
+                    print('in end trans111, before for loop, operations=', ops)
                 for op in ops:
                     if op.op_type == 'read' and transaction.trans_type == 'RW':
                         if op.v_ind % 2 == 1:
@@ -73,7 +75,8 @@ class TransactionManager:
                         else:
                             for i in range(1, 11):
                                 self.sites_map[i].erase_lock(op.v_ind, t_id)
-                    print('in end trans, in for loop, op=', op)
+                    if DEBUG_FLAG:
+                        print('in end trans, in for loop, op=', op)
                     if op.op_type == 'write' and transaction.trans_type == 'RW':
                         # if not op.is_before_recovery:
                         self.run_operation(op)
@@ -82,7 +85,8 @@ class TransactionManager:
                 transaction = self.transaction_map[t_id]
                 ops = transaction.operations
                 transaction.clear_op()
-                print('in end trans222, before for loop, operations=', transaction.operations)
+                if DEBUG_FLAG:
+                    print('in end trans222, before for loop, operations=', transaction.operations)
                 for op in ops:
                     if op.op_type == 'read' and transaction.trans_type == 'RW':
                         if op.v_ind % 2 == 1:
@@ -285,7 +289,8 @@ class TransactionManager:
             for st in sites:
                 site = self.sites_map[st]
                 op2 = Operation('write', v_id, datetime.now(), t_id, v_val)
-                print('!!!!!!!!!!!in write op, site: ', site)
+                if DEBUG_FLAG:
+                    print('!!!!!!!!!!!in write op, site: ', site)
                 if site.status == 'fail':
                     site.is_recov_before_write = True
                 if site.status == 'normal':
@@ -459,7 +464,8 @@ class Sites:
             return False
 
     def add_operation(self, t_id, operation):
-        print('add op:', operation)
+        if DEBUG_FLAG:
+            print('add op:', operation)
         if t_id not in self.transaction_table:
             self.transaction_table[t_id] = deque()
         self.transaction_table[t_id].append(operation)
@@ -486,8 +492,9 @@ class Sites:
         print('Variable x', self.variables[ind].index, ' : ', self.variables[ind].value)
 
     def commit(self, operation, transaction):
-        print('site commit, trans is ', transaction)
-        print('site commit, op is', operation)
+        if DEBUG_FLAG:
+            print('site commit, trans is ', transaction)
+            print('site commit, op is', operation)
         v_ind = operation.v_ind
         if transaction.trans_type == 'RO':
             if operation.op_type == 'read':
@@ -535,14 +542,16 @@ class Sites:
                     return False
             else:
                 res = True
-                print('site: ', self.site_id, 'status: ', self.status, end='')
-                print(' in commit write, lock table for v_id {} is: {}'.format(v_ind ,self.lock_table[v_ind]))
+                if DEBUG_FLAG:
+                    print('site: ', self.site_id, 'status: ', self.status, end='')
+                    print(' in commit write, lock table for v_id {} is: {}'.format(v_ind ,self.lock_table[v_ind]))
                 for lk in self.lock_table[v_ind]:
                     if lk.lock_type == 'write' and lk.trans_id == transaction.trans_id:
                         res = False
                         break
-                print('in commit write, res =========', res)
-                print('in commit write, operation &&&&&&', operation)
+                if DEBUG_FLAG:
+                    print('in commit write, res =========', res)
+                    print('in commit write, operation &&&&&&', operation)
                 # if res and self.status != 'recovery':
                 if res and self.status == 'recovery' and self.is_recov_before_write:
                     return False
