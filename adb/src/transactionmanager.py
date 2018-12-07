@@ -58,7 +58,7 @@ class TransactionManager:
             for i in range(len(self.op_wait_list)):
                 if self.op_wait_list[i].trans_id == t_id:
                     target = i
-            print('in end trans, target = ', target)
+            # print('in end trans, target = ', target)
             if target == -1:
                 transaction = self.transaction_map[t_id]
                 ops = transaction.operations
