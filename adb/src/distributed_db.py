@@ -1,6 +1,6 @@
 from parse_file import read_parse_file
 
-single_num = 4
+single_num = 1
 
 begin = single_num
 end = single_num

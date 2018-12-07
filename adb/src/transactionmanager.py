@@ -331,18 +331,19 @@ class TransactionManager:
 
     def dump_all(self):
         for i in range(1, 11):
-            self.dump_single_val(i)
+            self.dump_single_site(i)
 
     def dump_single_val(self, v_id):
         sites = self.variable_site_map[v_id]
-        # sites = self.sites_map[v_id]
+        print('Dump value')
         for st in sites:
             print('Site ', st, ': ', end='')
             site = self.sites_map[st]
             site.dump_single(v_id)
-            # st.dump_single(v_id)
 
     def dump_single_site(self, s_id):
+        print('*' * 50)
+        print('*' * 50)
         print('Dump site', s_id)
         self.sites_map[s_id].dump_all()
 

@@ -80,7 +80,7 @@ def find_pure_number(line):
 def parse_line(line, trans_manager):
     if line.startswith('begin('):
         trans_num = find_transaction_number(line)
-        print('begin trans num', trans_num)
+        # print('begin trans num', trans_num)
         trans_manager.start_transaction('RW', trans_num)
     elif line.startswith('beginRO('):
         trans_num = find_transaction_number(line)
@@ -89,42 +89,42 @@ def parse_line(line, trans_manager):
         trans_num = find_transaction_number(line)
         v_ind = find_variable_ind(line)
         v_val = find_write_variable_val(line[2:-1])
-        print('write variable ind', v_ind, 'variable val', v_val)
+        # print('write variable ind', v_ind, 'variable val', v_val)
         if trans_num in trans_manager.transaction_map:
             trans_manager.insert_site_to_trans_map(trans_num, v_ind)
             trans_manager.write_op(trans_num, v_ind, v_val)
         else:
             print('Wrong file format')
     elif line.startswith('R('):
-        print('read line:', line)
+        # print('read line:', line)
         trans_num = find_transaction_number(line)
         v_ind = find_variable_ind(line)
-        print('read trans num', trans_num)
+        # print('read trans num', trans_num)
         if trans_num in trans_manager.transaction_map:
             trans_manager.insert_site_to_trans_map(trans_num, v_ind)
             trans_manager.read_op(trans_num, v_ind)
     elif line.startswith('end('):
         trans_num = find_transaction_number(line)
-        print('end trans num', trans_num)
+        # print('end trans num', trans_num)
         if trans_num in trans_manager.transaction_map:
             trans_manager.end_transaction(trans_num)
     elif line.startswith('recover('):
         site_number = find_pure_number(line)
-        print('recover', site_number)
+        # print('recover', site_number)
         trans_manager.recover_site(site_number)
     elif line.startswith('fail('):
         site_number = find_pure_number(line)
-        print('fail', site_number)
+        # print('fail', site_number)
         trans_manager.fail_site(site_number)
     elif line.startswith('dump('):
         if 'x' in line:
             v_ind = find_variable_ind(line)
-            print('dump x', v_ind)
+            # print('dump x', v_ind)
             trans_manager.dump_single_val(v_ind)
         elif re.match(r'\d+', line):
             v_val = find_pure_number(line)
-            print('dump v', v_val)
+            # print('dump v', v_val)
             trans_manager.dump_single_site(v_val)
         else:
-            print('dump all')
+            # print('dump all')
             trans_manager.dump_all()
