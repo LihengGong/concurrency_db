@@ -9,7 +9,7 @@ class Operation:
             self.v_val = v_val
 
     def __repr__(self):
-        return 'op-type:{}, v_id:{}, time:{}, t_id:{}, v_val:{}....'.format(
+        return 'op-type:{}, v_id:{}, time:{}, t_id:{}, v_val:{}....#'.format(
             self.op_type, self.v_ind, self.time, self.trans_id, self.v_val
         )
 
@@ -19,10 +19,15 @@ class Transaction:
         self.trans_id = t_id
         self.time_stamp = time
         self.trans_type = tp
-        self.ops = list()
+        self.operations = list()
 
     def insert_op(self, new_op):
-        self.ops.append(new_op)
+        self.operations.append(new_op)
 
     def clear_op(self):
-        self.ops = list()
+        self.operations = list()
+    
+    def __repr__(self):
+        return 'tid: {}, trans_type: {}, time: {}, ops: {}'.format(
+            self.trans_id, self.trans_type, self.time_stamp, self.operations
+        )
