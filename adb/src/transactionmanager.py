@@ -1,3 +1,9 @@
+"""
+Author: Liheng Gong(lg2848)
+
+This class implements Transaction Manager.
+Transcation Manager is responsible for all the transactions in system.
+"""
 from datetime import datetime
 from collections import deque
 from dfs import Graph
@@ -52,25 +58,31 @@ class TransactionManager:
             for i in range(len(self.op_wait_list)):
                 if self.op_wait_list[i].trans_id == t_id:
                     target = i
+            print('in end trans, target = ', target)
             if target == -1:
                 transaction = self.transaction_map[t_id]
+                ops = transaction.operations
+                # print('before clear, operations=', transaction.operations)
                 transaction.clear_op()
 
-                for op in transaction.ops:
+                # print('before for loop, operations=', transaction.operations)
+                for op in ops:
                     if op.op_type == 'read' and transaction.trans_type == 'RW':
                         if op.v_ind % 2 == 1:
                             self.sites_map[op.v_ind % 10 + 1].erase_lock(op.v_ind, t_id)
                         else:
                             for i in range(1, 11):
                                 self.sites_map[i].erase_lock(op.v_ind, t_id)
-
+                    # print('in end trans, for loop, op=', op)
                     if op.op_type == 'write' and transaction.trans_type == 'RW':
                         self.run_operation(op)
+                        # print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@run op finished 1')
             else:
                 transaction = self.transaction_map[t_id]
+                ops = transaction.operations
                 transaction.clear_op()
 
-                for op in transaction.ops:
+                for op in ops:
                     if op.op_type == 'read' and transaction.trans_type == 'RW':
                         if op.v_ind % 2 == 1:
                             self.sites_map[op.v_ind % 10 + 1].erase_lock(op.v_ind, t_id)
@@ -103,15 +115,19 @@ class TransactionManager:
     def run_operation(self, op):
         v_id = op.v_ind
         trans = self.transaction_map[op.trans_id]
+        # print('entering run operation, op=', op)
 
         if v_id % 2 == 1:
             site = self.sites_map[v_id % 10 + 1]
             return site.commit(op, trans)
         else:
+            is_succeeded = True
             for i in range(1, 11):
+                # print('in run operation, i = ', i, 'op=', op)
                 if self.sites_map[i].status != 'fail' and not self.sites_map[i].commit(op, trans):
-                    return False
-            return True
+                    is_succeeded = False
+                    print('not succeeded for site: ', i)
+            return is_succeeded
 
     def abort(self, trans):
         t_id = trans.trans_id
@@ -152,14 +168,14 @@ class TransactionManager:
             if op.op_type == 'read':
                 if self.read_op(t_id, op.v_ind):
                     print('Waiting op finished: T', t_id, op.op_type, 'x', op.v_ind)
-                if len(trans.ops) == 0:
+                if len(trans.operations) == 0:
                     print('Waiting op to commit')
                     self.end_transaction(op.trans_id)
                     print('Waiting op commit done')
             else:
                 if self.write_op(op.trans_id, op.v_ind, op.v_val):
-                    print('Waiting op get lock: T', t_id, op.op_type, 'x', op.v_ind, '=', op.v_val)
-                    if len(trans.ops) == 0:
+                    print('Write: Waiting operation to get lock: T', t_id, op.op_type, 'x', op.v_ind, '=', op.v_val)
+                    if len(trans.operations) == 0:
                         print('Waiting op to commit')
                         self.end_transaction(op.trans_id)
                         print('Waiting op commit done')
@@ -243,7 +259,7 @@ class TransactionManager:
         return res
 
     def write_op(self, t_id, v_id, v_val):
-        # print('in write op, tid', t_id, 'vid', v_id, 'newval=', v_val)
+        print('in write op, tid', t_id, 'vid', v_id, 'newval=', v_val)
         res = True
         if v_id % 2 == 1:
             op1 = Operation('write', v_id, datetime.now(), t_id, v_val)
@@ -252,6 +268,7 @@ class TransactionManager:
                 site.add_operation(t_id, op1)
                 op2 = Operation('write', v_id, datetime.now(), t_id, v_val)
                 self.transaction_map[t_id].insert_op(op2)
+                # print('in write op operations=', self.transaction_map[t_id].operations)
             else:
                 self.op_wait_list.append(op1)
                 res = False
@@ -456,7 +473,7 @@ class Sites:
         print('Variable x', self.variables[ind].index, ' : ', self.variables[ind].value)
 
     def commit(self, operation, transaction):
-        print('site commit, type is ', transaction.trans_type)
+        # print('site commit, trans is ', transaction)
         v_ind = operation.v_ind
         if transaction.trans_type == 'RO':
             if operation.op_type == 'read':
@@ -505,9 +522,10 @@ class Sites:
             else:
                 res = True
                 for lk in self.lock_table[v_ind]:
-                    if lk.lock_type == 'write' and lk.trans_id != transaction.trans_id:
+                    if lk.lock_type == 'write' and lk.trans_id == transaction.trans_id:
                         res = False
                         break
+                print('in commit, res =========', res)
                 if res:
                     return False
 
