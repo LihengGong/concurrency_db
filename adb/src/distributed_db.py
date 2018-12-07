@@ -1,9 +1,14 @@
-from parse_file import read_parse_file, get_total_line_numbr, read_parse_partial_file
+from parse_file import read_parse_file
 
+begin = 1
+end = 21
 
-file_name = 'input1.txt'
-# read_parse_file('input1.txt')
-total_line = get_total_line_numbr(file_name)
-print(total_line)
+file_names = []
+for i in range(1, 21):
+    file_names.append('input{}.txt'.format(i))
 
-read_parse_partial_file(file_name, total_line)
+file_names.append('input3.5.txt')
+file_names.append('input3.7.txt')
+
+for file_name in file_names:
+    read_parse_file(file_name)

@@ -1,10 +1,12 @@
+// Test 10
+// T3 should wait and should not abort
 begin(T1)
 begin(T2)
-R(T1,x3)
-W(T2,x8,88) 
-fail(2)
-R(T2,x3)
-W(T1, x4,91)
-recover(2)
+begin(T3)
+W(T3,x2,22)
+W(T2,x4,44)
+R(T3,x4)
 end(T2)
+end(T3)
+R(T1,x2)
 end(T1)

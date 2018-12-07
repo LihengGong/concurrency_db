@@ -2,11 +2,28 @@ import re
 import transactionmanager
 
 
+def parse_single_file(file_name):
+    total_line = get_total_line_numbr(file_name)
+    print(total_line)
+    read_parse_partial_file(file_name, total_line)
+
 def read_parse_file(filename):
     trans_manager = transactionmanager.TransactionManager()
+    print_header()
+    print('begin processing for file ', filename)
+    print_header()
     with open(filename) as file:
         for line in file:
             parse_line(line.strip(), trans_manager)
+    print_header()
+    print('end processing for file ', filename)
+    print_header()
+    print()
+    print()
+
+def print_header():
+    stars = '*' * 50
+    print(stars)
 
 def get_total_line_numbr(filename):
     ln_num = -1
@@ -15,25 +32,20 @@ def get_total_line_numbr(filename):
             pass
     return ln_num + 1
 
-def print_header():
-    stars = '*' * 50
-    print(stars)
-
 def read_parse_partial_file(filename, total_lines):
     next_start = 0
     batch_num = 0
+    print_header()
+    print('begin batch for file ', filename)
+    print_header()
     while next_start < total_lines:
         batch_num += 1
-        print_header()
-        print('begin batch', batch_num)
-        print_header()
         next_start = read_parse_file_from_line(filename, next_start)
-        print_header()
-        print('end of batch', batch_num)
-        print_header()
-        print()
         next_start += 1
-    pass
+    print_header()
+    print('end of batch for file ', filename)
+    print_header()
+    print()
 
 def read_parse_file_from_line(filename, start_line_number):
     trans_manager = transactionmanager.TransactionManager()
@@ -41,8 +53,6 @@ def read_parse_file_from_line(filename, start_line_number):
     with open(filename) as file:
         for ln_num, line in enumerate(file):
             if ln_num >= start_line_number:
-                if '======' in line:
-                    return start
                 start += 1
                 parse_line(line.strip(), trans_manager)
     return start
