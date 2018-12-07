@@ -333,6 +333,7 @@ class TransactionManager:
         print('Start to fail site ', s_id)
         site = self.sites_map[s_id]
         trans_lst = site.fail()
+        print('in fail site, trans lst =', trans_lst)
         if len(trans_lst) > 0:
             print('Site fails. Abort all transactions...')
             for t_id in trans_lst:
@@ -458,8 +459,9 @@ class Sites:
             if i % 2 == 0 or i % 10 + 1 == self.site_id:
                 self.lock_table[i] = list()
 
+        trans_lst = self.transaction_table
         self.transaction_table = dict()
-        return list(self.transaction_table.keys())
+        return list(trans_lst.keys())
 
     def recover(self):
         self.status = 'recovery'
