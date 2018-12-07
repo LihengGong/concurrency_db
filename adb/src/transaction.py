@@ -4,13 +4,14 @@ class Operation:
         self.v_ind = v_ind
         self.time = time
         self.trans_id = tr_id
+        self.is_after_recovery = True
         self.v_val = None
         if v_val:
             self.v_val = v_val
 
     def __repr__(self):
-        return 'op-type:{}, v_id:{}, time:{}, t_id:{}, v_val:{}....#'.format(
-            self.op_type, self.v_ind, self.time, self.trans_id, self.v_val
+        return 'op-type:{}, v_id:{}, time:{}, t_id:{}, is_bef: {}, v_val:{}....#'.format(
+            self.op_type, self.v_ind, self.time, self.trans_id, self.is_after_recovery, self.v_val
         )
 
 
