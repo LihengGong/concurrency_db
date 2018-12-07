@@ -525,7 +525,7 @@ class Sites:
                     if lk.lock_type == 'write' and lk.trans_id == transaction.trans_id:
                         res = False
                         break
-                print('in commit, res =========', res)
+                # print('in commit, res =========', res)
                 if res:
                     return False
 
