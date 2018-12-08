@@ -108,9 +108,9 @@ class TransactionManager:
                     self.graph.delete_vertex(t_id)
                 print('Transaction ', t_id, ' committed, ', end='')
                 if target == -1:
-                    print('normal commit')
+                    print('commit status: normal commit')
                 else:
-                    print('unblocked and executed')
+                    print('commit status: unblocked and executed')
                 self.transaction_map.pop(t_id)
                 for item in self.transaction_sites_map[t_id]:
                     self.sites_map[item].remove_transaction(t_id)

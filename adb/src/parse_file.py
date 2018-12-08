@@ -1,6 +1,7 @@
 import re
 import transactionmanager
 
+DEBUG_FLAG = False
 
 def parse_single_file(file_name):
     total_line = get_total_line_numbr(file_name)
@@ -94,7 +95,11 @@ def parse_line(line, trans_manager):
             trans_manager.insert_site_to_trans_map(trans_num, v_ind)
             trans_manager.write_op(trans_num, v_ind, v_val)
         else:
-            print('Wrong file format')
+            if DEBUG_FLAG:
+                print('Wrong file format')
+                print('trans num', trans_num)
+                print('trans_manager.transaction_map', trans_manager.transaction_map)
+                print('end of Wrong format')
     elif line.startswith('R('):
         # print('read line:', line)
         trans_num = find_transaction_number(line)
@@ -103,6 +108,12 @@ def parse_line(line, trans_manager):
         if trans_num in trans_manager.transaction_map:
             trans_manager.insert_site_to_trans_map(trans_num, v_ind)
             trans_manager.read_op(trans_num, v_ind)
+        else:
+            if DEBUG_FLAG:
+                    print('Wrong file format')
+                    print('trans num', trans_num)
+                    print('trans_manager.transaction_map', trans_manager.transaction_map)
+                    print('end of Wrong format')
     elif line.startswith('end('):
         trans_num = find_transaction_number(line)
         # print('end trans num', trans_num)
