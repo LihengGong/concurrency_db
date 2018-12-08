@@ -1,6 +1,6 @@
 """
 Author: Liheng Gong(lg2848)
-
+        Peiyue Yang(py570)
 This class implements Transaction Manager.
 Transcation Manager is responsible for all the transactions in system.
 """
@@ -8,6 +8,7 @@ from datetime import datetime
 from collections import deque
 from dfs import Graph
 from transaction import Transaction, Operation
+from dbsite import Sites, Variable, Lock
 
 DEBUG_FLAG = False
 
@@ -31,6 +32,10 @@ class TransactionManager:
             self.sites_map[i] = Sites(i)
 
     def insert_site_to_trans_map(self, t_id, v_id):
+        """
+        input: transaction id, variable id.
+        insert site(s) into transaction_sites_map
+        """
         if t_id not in self.transaction_sites_map:
             self.transaction_sites_map[t_id] = list()
 
@@ -41,6 +46,10 @@ class TransactionManager:
                 self.transaction_sites_map[t_id].append(i)
 
     def start_transaction(self, trans_type, t_id):
+        """
+        input: transaction type, transaction id.
+        start the transaction and update the corresponding graph
+        """
         print('Start transaction ', t_id)
         if trans_type == 'RW':
             self.transaction_map[t_id] = Transaction(t_id, datetime.now(), 'RW')
@@ -51,6 +60,10 @@ class TransactionManager:
         print()
 
     def end_transaction(self, t_id):
+        """
+        input: transaction id.
+        end the transaction
+        """
         if t_id not in self.transaction_map:
             self.graph.delete_vertex(t_id)
         else:
@@ -118,6 +131,10 @@ class TransactionManager:
                     self.run_wait_list()
 
     def run_operation(self, op):
+        """
+        input: operation.
+        try to run the operation
+        """
         v_id = op.v_ind
         trans = self.transaction_map[op.trans_id]
         # print('entering run operation, op=', op)
@@ -135,6 +152,10 @@ class TransactionManager:
             return is_succeeded
 
     def abort(self, trans):
+        """
+        input: transaction.
+        abort the transaction, remove it from graph and every related.
+        """
         t_id = trans.trans_id
         self.graph.delete_vertex(t_id)
         self.transaction_map.pop(t_id)
@@ -149,18 +170,10 @@ class TransactionManager:
         self.op_wait_list = [w for w in self.op_wait_list if w not in remove_lst]
         self.run_wait_list()
 
-    """
-    lst = [k for k in range(20)]
-
-    print(lst)
-
-    for i in range(len(lst) - 1, -1, -1):
-        if lst[i] % 3 == 0:
-            del lst[i]
-
-    print(lst)
-    """
     def run_wait_list(self):
+        """
+        execute the operation in the waitlist.
+        """
         # print('run wait list, wait list:', self.op_wait_list)
         self.op_wait_list.reverse()
         for i in range(len(self.op_wait_list) - 1, -1, -1):
@@ -187,6 +200,12 @@ class TransactionManager:
         self.op_wait_list.reverse()
 
     def read_op(self, t_id, v_id):
+        """
+        input: transaction id, variable id.
+        try to execute read operation.
+        put the operation in waitlist if necessary.
+        read operation will be executed immediately if it get the lock.
+        """
         # print('in read op, tid', t_id, 'vid', v_id)
         if t_id not in self.transaction_map:
             print('Aborted Transaction in read_op')
@@ -265,6 +284,13 @@ class TransactionManager:
         return res
 
     def write_op(self, t_id, v_id, v_val):
+        """
+        input: transaction id, variable id, variable value.
+        try to execute the write operation.
+        put the operation in waitlist if necessary.
+        the write will be really executed when end(t_id) 
+        if the transaction is not aborted.
+        """
         print('in write op, tid', t_id, 'vid', v_id, 'newval=', v_val)
         res = True
         if v_id % 2 == 1:
@@ -326,6 +352,11 @@ class TransactionManager:
         return res
 
     def check_deadlock(self):
+        """
+        build a DAG.
+        use circle detection to detect deadlock.
+        if deadlock detected, abort the youngest transaction.
+        """
         deadlock_trans = self.graph.build_dag()
         # print('detect dag: deadlock_trans', deadlock_trans)
 
@@ -340,6 +371,10 @@ class TransactionManager:
             deadlock_trans = self.graph.build_dag()
 
     def fail_site(self, s_id):
+        """
+        input: site id.
+        fail a site and abort all transactions that access the site.
+        """
         print('Start to fail site ', s_id)
         site = self.sites_map[s_id]
         trans_lst = site.fail()
@@ -355,16 +390,27 @@ class TransactionManager:
         print()
 
     def recover_site(self, s_id):
+        """
+        input: site id.
+        recover a site
+        """
         print('Recover site', s_id)
         self.sites_map[s_id].recover()
         self.run_wait_list()
         print('Site', s_id, 'recovered')
 
     def dump_all(self):
+        """
+        print the value of all variable in all sites
+        """
         for i in range(1, 11):
             self.dump_single_site(i)
 
     def dump_single_val(self, v_id):
+        """
+        input: variable id.
+        print the value of the variable in all sites
+        """
         sites = self.variable_site_map[v_id]
         print('Dump value')
         for st in sites:
@@ -373,264 +419,13 @@ class TransactionManager:
             site.dump_single(v_id)
 
     def dump_single_site(self, s_id):
+        """
+        input: site id.
+        print the value of all variables in the site
+        """
         print('*' * 50)
         print('*' * 50)
         print('Dump site', s_id)
         self.sites_map[s_id].dump_all()
 
 
-class Sites:
-    def __init__(self, s_id):
-        self.site_id = s_id
-        self.status = 'normal'
-        self.is_recov_before_write = False
-        self.variables = dict()
-        self.lock_table = dict()
-        self.transaction_table = dict()
-        for i in range(1, 21):
-            if i % 2 == 0 or i % 10 + 1 == self.site_id:
-                self.variables[i] = Variable(i, 10 * i)
-                self.lock_table[i] = list()
-
-    def __repr__(self):
-        return 'site id = {}, status = {}, is_recov={}'.format(
-            self.site_id, self.status, self.is_recov_before_write
-        )
-
-    def update_variable_lock(self, ind, lock):
-        pass
-        # self.lock_table[ind].append(lock)
-
-    def insert_lock(self, v_ind, lock):
-        if self.status == 'fail':
-            return False
-        elif self.status == 'recovery':
-            if lock.lock_type == 'read' and v_ind % 2 == 0:
-                return False
-
-        variable_locks = self.lock_table[v_ind]
-        if lock.lock_type == 'read':
-            if len(variable_locks) == 0:
-                variable_locks.append(lock)
-                self.lock_table[v_ind] = variable_locks
-                return True
-            else:
-                res = False
-                for v_l in variable_locks:
-                    if v_l.lock_type == 'write':
-                        res = True
-                        break
-                if not res:
-                    variable_locks.append(lock)
-                    self.lock_table[v_ind] = variable_locks
-                return not res
-        else:
-            # print('insert lock, len of variable-locks:', len(variable_locks))
-            if len(variable_locks) > 1:
-                return False
-            elif len(variable_locks) == 1:
-                if variable_locks[0].trans_id == lock.trans_id:
-                    variable_locks.append(lock)
-                    self.lock_table[v_ind] = variable_locks
-                    return True
-                else:
-                    return False
-            else:
-                variable_locks.append(lock)
-                self.lock_table[v_ind] = variable_locks
-                return True
-
-    def erase_lock(self, v_ind, t_id):
-        locks = self.lock_table[v_ind]
-
-        for lk in locks:
-            if lk.trans_id == t_id:
-                locks.remove(lk)
-                break
-
-        self.lock_table[v_ind] = locks
-
-    def remove_transaction(self, t_id):
-        if t_id in self.transaction_table:
-            self.transaction_table.pop(t_id)
-            for k in self.lock_table.keys():
-                lst = list()
-                for lk in self.lock_table[k]:
-                    if lk.trans_id == t_id:
-                        lst.append(lk)
-                res_lst = [item for item in self.lock_table[k] if item not in lst]
-                self.lock_table[k] = res_lst
-            return True
-        else:
-            return False
-
-    def add_operation(self, t_id, operation):
-        if DEBUG_FLAG:
-            print('add op:', operation)
-        if t_id not in self.transaction_table:
-            self.transaction_table[t_id] = deque()
-        self.transaction_table[t_id].append(operation)
-
-    def fail(self):
-        self.status = 'fail'
-        for i in range(1, 21):
-            if i % 2 == 0 or i % 10 + 1 == self.site_id:
-                self.lock_table[i] = list()
-
-        trans_lst = self.transaction_table
-        self.transaction_table = dict()
-        return list(trans_lst.keys())
-
-    def recover(self):
-        self.status = 'recovery'
-
-    def dump_all(self):
-        for i in range(1, 21):
-            if i % 2 == 0 or i % 10 + 1 == self.site_id:
-                print('Variable x', self.variables[i].index, ' : ', self.variables[i].value)
-
-    def dump_single(self, ind):
-        print('Variable x', self.variables[ind].index, ' : ', self.variables[ind].value)
-
-    def commit(self, operation, transaction):
-        if DEBUG_FLAG:
-            print('site commit, trans is ', transaction)
-            print('site commit, op is', operation)
-        v_ind = operation.v_ind
-        if transaction.trans_type == 'RO':
-            if operation.op_type == 'read':
-                if v_ind % 2 == 1:
-                    if self.status == 'fail':
-                        return False
-                    if DEBUG_FLAG:
-                        print('one: var:', self.variables[v_ind])
-                        print('operation: ', operation)
-                    print('Variable x', self.variables[v_ind].index,
-                          ' from T', transaction.trans_id, ' READ value ',
-                          self.variables[v_ind].retrieve_newest(operation.time),
-                          ' at site', self.site_id)
-                    return True
-                else:
-                    if self.status == 'normal':
-                        if DEBUG_FLAG:
-                            print('two: var:', self.variables[v_ind])
-                        print('Variable x', self.variables[v_ind].index,
-                              ' from T', transaction.trans_id, ' READ value ',
-                              self.variables[v_ind].retrieve_newest(datetime.now()),
-                              ' at site', self.site_id)
-                        return True
-                    return False
-        else:
-            if operation.op_type == 'read':
-                res = False
-                for lk in self.lock_table[v_ind]:
-                    if lk.lock_type == 'write' and lk.trans_id != transaction.trans_id:
-                        res = True
-                        break
-                if res and self.status == 'recovery' and not operation.is_after_recovery:
-                    return False
-
-                if v_ind % 2 == 1:
-                    if self.status == 'fail':
-                        return False
-
-                    if DEBUG_FLAG:
-                        print('three: var:', self.variables[v_ind])
-                    print('Variable x', self.variables[v_ind].index, ' from T',
-                          transaction.trans_id, ' READ value ',
-                          self.variables[v_ind].value, ' at site', self.site_id)
-                    return True
-                else:
-                    if self.status == 'normal':
-                        if DEBUG_FLAG:
-                            print('four: var:', self.variables[v_ind])
-                        print('Variable x', self.variables[v_ind].index, ' from T',
-                              transaction.trans_id, ' READ value ',
-                              self.variables[v_ind].value, ' at site', self.site_id)
-                        return True
-                    return False
-            else:
-                res = True
-                if DEBUG_FLAG:
-                    print('site: ', self.site_id, 'status: ', self.status, end='')
-                    print(' in commit write, lock table for v_id {} is: {}'.format(v_ind ,self.lock_table[v_ind]))
-                for lk in self.lock_table[v_ind]:
-                    if lk.lock_type == 'write' and lk.trans_id == transaction.trans_id:
-                        res = False
-                        break
-                if DEBUG_FLAG:
-                    print('in commit write, res =========', res)
-                    print('in commit write, operation &&&&&&', operation)
-                # if res and self.status != 'recovery':
-                if res and self.status == 'recovery' and self.is_recov_before_write:
-                    return False
-
-                if self.status == 'fail':
-                    return False
-                elif self.status == 'recovery':
-                    self.variables[v_ind].set_value(operation.v_val)
-                    self.status = 'normal'
-                    if DEBUG_FLAG:
-                        print('five: var:', self.variables[v_ind])
-                    print('Variable x', self.variables[v_ind].index, ' from T',
-                          transaction.trans_id, ' WRITE value ',
-                          self.variables[v_ind].value, ' at site', self.site_id)
-                    print('Site ', self.site_id, ' become NORMAL because T',
-                          transaction.trans_id, 'WRITE x',
-                          )
-                    self.erase_lock(v_ind, transaction.trans_id)
-                    if self.is_recov_before_write:
-                        self.is_recov_before_write = False
-                    return True
-                else:
-                    self.variables[v_ind].set_value(operation.v_val)
-                    if DEBUG_FLAG:
-                        print('six: var:', self.variables[v_ind])
-                    print('Variable x', self.variables[v_ind].index, ' from T',
-                          transaction.trans_id, ' WRITE value ',
-                          self.variables[v_ind].value, ' at site', self.site_id)
-                    self.erase_lock(v_ind, transaction.trans_id)
-                    return True
-        return False
-
-
-class Variable:
-    def __init__(self, v_ind, v_val):
-        self.index = v_ind
-        self.value = v_val
-        self.start_time = datetime.now()
-        self.committed_delta_time = datetime.now() - self.start_time
-        self.data_version = dict()
-        self.data_version[self.committed_delta_time] = self.value
-
-    def __repr__(self):
-        return 'v_id: {}, v_val: {}, start_time: {}, \
-                cmt_delt_time: {}, data_ver: {}'.format(
-                    self.index, self.value, self.start_time, self.committed_delta_time,
-                    self.data_version
-                )
-
-    def set_value(self, v_val):
-        self.committed_delta_time = datetime.now() - self.start_time
-        # delta_time = datetime.datetime.now() - self.start_time
-        self.data_version[self.committed_delta_time] = v_val
-        self.value = v_val
-
-    def retrieve_newest(self, time):
-        delta_time = time - self.start_time
-        latest = [k for k in self.data_version.keys() if k < delta_time]
-        if DEBUG_FLAG:
-            print('max issssssssssss', max(latest))
-        return self.data_version[max(latest)] if len(latest) > 0 else None
-
-
-class Lock:
-    def __init__(self, v_ind, t_id, l_type):
-        self.val_ind = v_ind
-        self.trans_id = t_id
-        self.lock_type = l_type
-    
-    def __repr__(self):
-        return 'Lock: vid: {}, tid: {}, locktype: {}'.format(
-            self.val_ind, self.trans_id, self.lock_type
-        )

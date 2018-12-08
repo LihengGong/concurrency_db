@@ -1,3 +1,11 @@
+"""
+Author: Liheng Gong(lg2848)
+        Peiyue Yang(py570)
+
+This module is responsible for read and parse inputs(test cases)
+
+"""
+
 import re
 import transactionmanager
 

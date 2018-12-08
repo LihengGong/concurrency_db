@@ -1,4 +1,12 @@
+"""
+Author: Liheng Gong(lg2848)
+        Peiyue Yang(py570)
+"""
+
 class Operation:
+    """
+    Class for operations
+    """
     def __init__(self, tp, v_ind, time, tr_id, v_val=None):
         self.op_type = tp
         self.v_ind = v_ind
@@ -16,6 +24,9 @@ class Operation:
 
 
 class Transaction:
+    """
+    Class that represents transaction
+    """
     def __init__(self, t_id, time, tp):
         self.trans_id = t_id
         self.time_stamp = time

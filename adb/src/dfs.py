@@ -1,3 +1,10 @@
+"""
+Author: Liheng Gong(lg2848)
+        Peiyue Yang(py570)
+
+This module is responsible for build DAG.
+"""
+
 class Vertices:
     def __init__(self, v_id):
         self.v_id = v_id
