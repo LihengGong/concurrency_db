@@ -2,20 +2,26 @@
 Author: Liheng Gong(lg2848)
         Peiyue Yang(py570)
 """
-
+import sys
 from parse_file import read_parse_file
 
-single_num = 21
+if (len(sys.argv) == 1):
+    print('Please specify input file name')
 
-begin = single_num
-end = single_num + 1
+for i in range(1, len(sys.argv)):
+    read_parse_file(sys.argv[i])
 
-file_names = []
-for i in range(begin, end):
-    file_names.append('tests/input{}.txt'.format(i))
+# single_num = 21
 
-# file_names.append('tests/input3.5.txt')
-# file_names.append('tests/input3.7.txt')
+# begin = single_num
+# end = single_num + 1
 
-for file_name in file_names:
-    read_parse_file(file_name)
+# file_names = []
+# for i in range(begin, end):
+#     file_names.append('tests/input{}.txt'.format(i))
+
+# # file_names.append('tests/input3.5.txt')
+# # file_names.append('tests/input3.7.txt')
+
+# for file_name in file_names:
+#     read_parse_file(file_name)
