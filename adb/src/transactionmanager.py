@@ -195,21 +195,22 @@ class TransactionManager:
         res = True
 
         if trans.trans_type == 'RO':
+            trans_time = trans.time_stamp
             if v_id % 2 == 1:
                 site = self.sites_map[v_id % 10 + 1]
-                op1 = Operation('read', v_id, datetime.now(), t_id, None)
+                op1 = Operation('read', v_id, trans_time, t_id, None)
                 site.add_operation(t_id, op1)
-                op2 = Operation('read', v_id, datetime.now(), t_id, None)
+                op2 = Operation('read', v_id, trans_time, t_id, None)
                 self.transaction_map[t_id].insert_op(op2)
                 site.commit(op1, trans)
             else:
                 for st in self.variable_site_map[v_id]:
                     site = self.sites_map[st]
-                    op1 = Operation('read', v_id, datetime.now(), t_id, None)
+                    op1 = Operation('read', v_id, trans_time, t_id, None)
                     site.add_operation(t_id, op1)
                     if site.commit(op1, trans):
                         break
-                op2 = Operation('read', v_id, datetime.now(), t_id, None)
+                op2 = Operation('read', v_id, trans_time, t_id, None)
                 self.transaction_map[t_id].insert_op(op2)
         else:
             if v_id % 2 == 1:
@@ -501,14 +502,18 @@ class Sites:
                 if v_ind % 2 == 1:
                     if self.status == 'fail':
                         return False
-
+                    if DEBUG_FLAG:
+                        print('one: var:', self.variables[v_ind])
+                        print('operation: ', operation)
                     print('Variable x', self.variables[v_ind].index,
                           ' from T', transaction.trans_id, ' READ value ',
-                          self.variables[v_ind].retrieve_newest(datetime.now()),
+                          self.variables[v_ind].retrieve_newest(operation.time),
                           ' at site', self.site_id)
                     return True
                 else:
                     if self.status == 'normal':
+                        if DEBUG_FLAG:
+                            print('two: var:', self.variables[v_ind])
                         print('Variable x', self.variables[v_ind].index,
                               ' from T', transaction.trans_id, ' READ value ',
                               self.variables[v_ind].retrieve_newest(datetime.now()),
@@ -529,12 +534,16 @@ class Sites:
                     if self.status == 'fail':
                         return False
 
+                    if DEBUG_FLAG:
+                        print('three: var:', self.variables[v_ind])
                     print('Variable x', self.variables[v_ind].index, ' from T',
                           transaction.trans_id, ' READ value ',
                           self.variables[v_ind].value, ' at site', self.site_id)
                     return True
                 else:
                     if self.status == 'normal':
+                        if DEBUG_FLAG:
+                            print('four: var:', self.variables[v_ind])
                         print('Variable x', self.variables[v_ind].index, ' from T',
                               transaction.trans_id, ' READ value ',
                               self.variables[v_ind].value, ' at site', self.site_id)
@@ -561,6 +570,8 @@ class Sites:
                 elif self.status == 'recovery':
                     self.variables[v_ind].set_value(operation.v_val)
                     self.status = 'normal'
+                    if DEBUG_FLAG:
+                        print('five: var:', self.variables[v_ind])
                     print('Variable x', self.variables[v_ind].index, ' from T',
                           transaction.trans_id, ' WRITE value ',
                           self.variables[v_ind].value, ' at site', self.site_id)
@@ -573,6 +584,8 @@ class Sites:
                     return True
                 else:
                     self.variables[v_ind].set_value(operation.v_val)
+                    if DEBUG_FLAG:
+                        print('six: var:', self.variables[v_ind])
                     print('Variable x', self.variables[v_ind].index, ' from T',
                           transaction.trans_id, ' WRITE value ',
                           self.variables[v_ind].value, ' at site', self.site_id)
@@ -590,6 +603,13 @@ class Variable:
         self.data_version = dict()
         self.data_version[self.committed_delta_time] = self.value
 
+    def __repr__(self):
+        return 'v_id: {}, v_val: {}, start_time: {}, \
+                cmt_delt_time: {}, data_ver: {}'.format(
+                    self.index, self.value, self.start_time, self.committed_delta_time,
+                    self.data_version
+                )
+
     def set_value(self, v_val):
         self.committed_delta_time = datetime.now() - self.start_time
         # delta_time = datetime.datetime.now() - self.start_time
@@ -599,7 +619,9 @@ class Variable:
     def retrieve_newest(self, time):
         delta_time = time - self.start_time
         latest = [k for k in self.data_version.keys() if k < delta_time]
-        return self.data_version[latest[0]] if len(latest) > 0 else None
+        if DEBUG_FLAG:
+            print('max issssssssssss', max(latest))
+        return self.data_version[max(latest)] if len(latest) > 0 else None
 
 
 class Lock:
